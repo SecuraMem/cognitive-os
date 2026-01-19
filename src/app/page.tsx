@@ -18,13 +18,6 @@ export default function Home() {
 
   const [isProvisioned, setIsProvisioned] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
-
-  if (status === 'loading') {
-    return <div className="flex h-screen items-center justify-center bg-[#0a0a0c] text-white">Loading Cognitive Core...</div>;
-  }
-
-  if (status === 'unauthenticated') return null;
-
   const [isLoading, setIsLoading] = useState(false);
   const [logs, setLogs] = useState<string[]>([]);
 
@@ -48,6 +41,12 @@ export default function Home() {
       setIsLoading(false);
     }
   };
+
+  if (status === 'loading') {
+    return <div className="flex h-screen items-center justify-center bg-[#0a0a0c] text-white">Loading Cognitive Core...</div>;
+  }
+
+  if (status === 'unauthenticated') return null;
 
   if (!isProvisioned) {
     return (

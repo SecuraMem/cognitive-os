@@ -2,9 +2,28 @@
 
 import React, { useState } from 'react';
 
+import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
+
 export default function Home() {
+  const { data: session, status } = useSession();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (status === 'unauthenticated') {
+      router.push('/login');
+    }
+  }, [status, router]);
+
   const [isProvisioned, setIsProvisioned] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
+
+  if (status === 'loading') {
+    return <div className="flex h-screen items-center justify-center bg-[#0a0a0c] text-white">Loading Cognitive Core...</div>;
+  }
+
+  if (status === 'unauthenticated') return null;
 
   const [isLoading, setIsLoading] = useState(false);
   const [logs, setLogs] = useState<string[]>([]);
@@ -15,7 +34,7 @@ export default function Home() {
       const response = await fetch('/api/provision', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ step, email: 'jeremy@example.com' }), // In prod, get from session
+        body: JSON.stringify({ step, email: session?.user?.email || 'jeremy@example.com' }),
       });
       const data = await response.json();
 
@@ -141,10 +160,12 @@ export default function Home() {
             <span>+ Provision Exec</span>
           </button>
           <div className="flex items-center space-x-3 p-2">
-            <div className="w-8 h-8 rounded-full bg-accent flex items-center justify-center text-xs font-bold">JA</div>
+            <div className="w-8 h-8 rounded-full bg-accent flex items-center justify-center text-xs font-bold">
+              {session?.user?.name?.[0] || 'ME'}
+            </div>
             <div className="text-sm">
-              <p className="font-semibold">Jeremy A.</p>
-              <p className="text-muted-foreground text-[10px]">C-Suite Prime</p>
+              <p className="font-semibold">{session?.user?.name || 'Loading...'}</p>
+              <p className="text-muted-foreground text-[10px]">{session?.user?.email || 'C-Suite Exec'}</p>
             </div>
           </div>
         </div>
@@ -156,7 +177,7 @@ export default function Home() {
         <header className="flex justify-between items-center">
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Executive Dashboard</h1>
-            <p className="text-muted-foreground">Your cognitive load is being managed. 14 loops closed today.</p>
+            <p className="text-muted-foreground hidden md:block">System Active. Waiting for ingress...</p>
           </div>
           <div className="flex space-x-4">
             <div className="glass px-4 py-2 rounded-xl border border-[#27272a] flex items-center space-x-2 text-sm text-muted-foreground text-center">
@@ -176,35 +197,35 @@ export default function Home() {
             <div className="flex justify-between items-start">
               <div>
                 <p className="text-sm text-muted-foreground uppercase tracking-wider font-semibold">Operational Velocity</p>
-                <h3 className="text-4xl font-bold mt-1">92<span className="text-xl text-accent font-normal ml-1">↑ 12%</span></h3>
+                <h3 className="text-4xl font-bold mt-1">--<span className="text-xl text-muted-foreground font-normal ml-1"></span></h3>
               </div>
-              <div className="w-12 h-12 rounded-full border-4 border-accent/20 border-t-accent flex items-center justify-center font-bold text-xs text-accent">
-                92%
+              <div className="w-12 h-12 rounded-full border-4 border-[#27272a] flex items-center justify-center font-bold text-xs text-muted-foreground">
+                0%
               </div>
             </div>
-            <p className="text-xs text-muted-foreground mt-4">Average loop closure time: <span className="text-white">4.2 hours</span></p>
+            <p className="text-xs text-muted-foreground mt-4">Average loop closure time: <span className="text-white">--</span></p>
           </div>
 
           <div className="metric-card">
             <div className="flex justify-between items-start">
               <div>
                 <p className="text-sm text-muted-foreground uppercase tracking-wider font-semibold">Cognitive Savings</p>
-                <h3 className="text-4xl font-bold mt-1">112</h3>
+                <h3 className="text-4xl font-bold mt-1">0</h3>
               </div>
-              <div className="w-12 h-12 bg-primary/20 rounded-xl flex items-center justify-center text-primary">
+              <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center text-muted-foreground">
                 <BrainIcon />
               </div>
             </div>
-            <p className="text-xs text-muted-foreground mt-4">Estimated focus hours reclaimed today: <span className="text-white">2.5 hrs</span></p>
+            <p className="text-xs text-muted-foreground mt-4">Estimated focus hours reclaimed today: <span className="text-white">0 hrs</span></p>
           </div>
 
           <div className="metric-card">
             <div className="flex justify-between items-start">
               <div>
                 <p className="text-sm text-muted-foreground uppercase tracking-wider font-semibold">Relational Links</p>
-                <h3 className="text-4xl font-bold mt-1">843</h3>
+                <h3 className="text-4xl font-bold mt-1">0</h3>
               </div>
-              <div className="w-12 h-12 bg-accent/20 rounded-xl flex items-center justify-center text-accent">
+              <div className="w-12 h-12 bg-accent/10 rounded-xl flex items-center justify-center text-muted-foreground">
                 <PeopleIcon />
               </div>
             </div>
@@ -220,21 +241,15 @@ export default function Home() {
               <span>Active Loops</span>
             </h3>
             <div className="space-y-4">
-              <div className="p-4 bg-[#16161a] rounded-xl border border-[#27272a] flex justify-between">
-                <span>Wharf Blueprint Delivery</span>
-                <span className="status-chip status-active">Admin</span>
-              </div>
-              <div className="p-4 bg-[#16161a] rounded-xl border border-[#27272a] flex justify-between">
-                <span>Follow up w/ Minister</span>
-                <span className="status-chip status-waiting">People</span>
+              <div className="p-8 text-center text-muted-foreground text-sm border border-dashed border-[#27272a] rounded-xl">
+                No active loops. Use Google Chat to capture.
               </div>
             </div>
           </div>
           <div className="metric-card">
             <h3 className="font-bold text-lg mb-2">Relational Intelligence Synthesis</h3>
             <p className="text-sm text-muted-foreground leading-relaxed">
-              Gemini identifies a connection between <strong>Minister Thompson</strong> and your
-              <strong>Solar Ferry</strong> project.
+              System is listening. Relation graph will populate after 24 hours of ingress.
             </p>
           </div>
         </section>
